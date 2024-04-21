@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import transforms, datasets
 from datasets import load_dataset
 
-from model import CustomVgg16
+from model import CustomVgg16, SimpleResNet
 
 
 transform_image = transforms.Compose([
@@ -73,18 +73,18 @@ def load_data_hf(data_dir='data/', batch_size=32, val_split=0.1):
 if __name__ == '__main__':
     # train_loader, val_loader, test_loader = prepare_data()
     train_loader, val_loader = load_data_hf()
-    model = CustomVgg16()
+    # model = CustomVgg16()
+    model = SimpleResNet()
     checkpoint_callback = ModelCheckpoint(
         monitor='val_loss',
         dirpath='checkpoints',
-        filename='HF-vgg16-{epoch:02d}-{val_loss:.2f}',
+        filename='resnet-{epoch:02d}-{val_loss:.2f}',
         save_top_k=1,
         mode='min'
     )
     trainer = pl.Trainer(
-        max_epochs=50,
+        max_epochs=20,
         callbacks=[checkpoint_callback],
-        accelerator='mps',
-        devices=1
+        accelerator='auto'
     )
     trainer.fit(model, train_loader, val_loader)
