@@ -3,6 +3,7 @@ from torch import nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau, OneCycleLR
 from torchvision import models
 import pytorch_lightning as pl
+import torch.nn.functional as F
 
 from utils import conv_block, fscore
 
@@ -32,7 +33,8 @@ class CustomVgg16(pl.LightningModule):
         outputs = self(images)
         # labels = nn.functional.one_hot(labels, num_classes=self.num_classes).sum(dim=0).float()
         loss = self.criterion(outputs, labels)
-        self.log('train_loss', loss)
+        acc = fscore(outputs, labels)
+        self.log_dict({'train_loss': loss, 'train_score': acc}, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -40,8 +42,9 @@ class CustomVgg16(pl.LightningModule):
         outputs = self(images)
         # labels = nn.functional.one_hot(labels, num_classes=self.num_classes).sum(dim=0).float()
         loss = self.criterion(outputs, labels)
-        self.log('val_loss', loss)
-        return loss
+        acc = fscore(outputs, labels)
+        self.log_dict({'val_loss': loss, 'val_score': acc}, prog_bar=True)
+        return {'val_loss': loss, 'val_score': acc}
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.classifier.parameters(), lr=self.learning_rate)
@@ -114,7 +117,8 @@ class SimpleResNet(pl.LightningModule):
         outputs = self(images)
         # labels = nn.functional.one_hot(labels, num_classes=self.num_classes).sum(dim=0).float()
         loss = self.criterion(outputs, labels)
-        self.log('train_loss', loss)
+        acc = fscore(outputs, labels)
+        self.log_dict({'train_loss': loss, 'train_score': acc}, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -123,7 +127,7 @@ class SimpleResNet(pl.LightningModule):
         # labels = nn.functional.one_hot(labels, num_classes=self.num_classes).sum(dim=0).float()
         loss = self.criterion(outputs, labels)
         acc = fscore(outputs, labels)
-        self.log_dict({'val_loss': loss, 'val_score': acc})
+        self.log_dict({'val_loss': loss, 'val_score': acc}, prog_bar=True)
         return {'val_loss': loss, 'val_score': acc}
 
     def configure_optimizers(self):

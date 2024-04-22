@@ -13,10 +13,11 @@ transform_image = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-transform_label = transforms.Compose([
-        transforms.ToTensor()
-])
-
+transform_small = transforms.Compose([
+        transforms.Resize((128, 128)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
 def prepare_data_old(data_dir='data/', batch_size=32, val_split=0.1):
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -41,7 +42,7 @@ def prepare_data_old(data_dir='data/', batch_size=32, val_split=0.1):
 
 
 def transform_hf(examples):
-    examples['image'] = [transform_image(image) for image in examples['image']]
+    examples['image'] = [transform_small(image) for image in examples['image']]
     # examples['label'] = [lbl['label'] for lbl in examples['digits']]
     return examples
 
@@ -50,7 +51,7 @@ def collate_fn(examples):
     images = []
     labels = torch.zeros((len(examples), 10), dtype=torch.float32)
     for i, sample in enumerate(examples):
-        images.append(transform_image(sample['image']))
+        images.append(transform_small(sample['image']))
         for j in sample['digits']['label']:
             labels[i][j] = 1.
 
@@ -73,8 +74,8 @@ def load_data_hf(data_dir='data/', batch_size=32, val_split=0.1):
 if __name__ == '__main__':
     # train_loader, val_loader, test_loader = prepare_data()
     train_loader, val_loader = load_data_hf()
-    # model = CustomVgg16()
-    model = SimpleResNet()
+    model = CustomVgg16()
+    # model = SimpleResNet()
     checkpoint_callback = ModelCheckpoint(
         monitor='val_loss',
         dirpath='checkpoints',
